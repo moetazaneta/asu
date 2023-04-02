@@ -1,19 +1,29 @@
 {
   "name": "asu",
   "version": "0.0.1",
-  "main": "src/index.js",
-  "type": "module",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node src/index.js"
+    "dev": "nodemon --exec ts-node src/index.ts"
   },
   "license": "MIT",
   "dependencies": {
+    "@prisma/client": "^4.12.0",
+    "crypto-js": "^4.1.1",
     "dotenv": "^16.0.3",
     "imap": "^0.8.19",
-    "imap-simple": "^5.1.0",
-    "lodash": "^4.17.21",
     "mailparser": "^3.6.4",
-    "node-imap": "^0.9.6",
-    "telegraf": "^4.12.2"
+    "prisma": "^4.12.0",
+    "telegraf": "^4.12.2",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.1.1",
+    "@types/imap": "^0.8.35",
+    "@types/mailparser": "^3.4.0",
+    "@types/node": "^18.15.11",
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^5.0.3"
   }
 }

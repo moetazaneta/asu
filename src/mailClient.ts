@@ -2,11 +2,12 @@ import Imap from "imap";
 import { simpleParser } from 'mailparser';
 
 export class MailClient {
-  #handleCode = () => {}
+  private handleCode: (code: string) => void = () => {}
+  private imap: Imap;
 
   constructor(
-    user,
-    password,
+    user: string,
+    password: string,
   ) {
     const config = {
       user,
@@ -22,9 +23,9 @@ export class MailClient {
     this.imap = new Imap(config);
 
     this.imap.once("ready", () => {
-      this.#searchMail();
+      this.searchMail();
     });
-    this.imap.once('error', error => {
+    this.imap.once('error', (error: unknown) => {
       console.log('Error:', error)
     });
     this.imap.once('end', () => {
@@ -34,7 +35,7 @@ export class MailClient {
     this.imap.connect();
   }
 
-  #searchMail() {
+searchMail() {
     this.imap.openBox('INBOX', true, () => {
       this.imap.on('mail', () => {
         const searchCriteria = [
@@ -42,15 +43,18 @@ export class MailClient {
           ['SINCE', new Date()],
           ['FROM', process.env.EMAIL]
         ]
-        this.imap.search(searchCriteria, (_error, results) => {
-          this.#fetchMail(results.at(-1));
+        this.imap.search(searchCriteria, (_error, ids) => {
+          const mailId = ids.at(-1);
+          if (mailId != null) {
+            this.fetchMail(mailId);
+          }
         })
       });
     });
   }
 
-  #fetchMail(results) {
-    const f = this.imap.fetch(results, {
+  private fetchMail(result: number) {
+    const f = this.imap.fetch(result, {
       bodies: ['TEXT'],
       markSeen: false
     });
@@ -58,12 +62,15 @@ export class MailClient {
     f.on('message', msg => {
       console.log('message')
       msg.on('body', stream => {
-        simpleParser(stream, async (err, parsed) => {
-          const salt = parsed.headerLines.find(headerLine => headerLine.key === '').line;
-          const text = parsed.text.split(salt)[0];
+        simpleParser(stream, async (err, mail) => {
+          const salt = mail.headerLines.find(headerLine => headerLine.key === '')?.line;
+          const text = salt ? mail.text?.split(salt)[0] : mail.text;
+
           // "Перевод клиенту. Код подтверждения: 12345"
-          const code = text.split('Код подтверждения: ')[1].split('\n')[0]
-          this.#handleCode(code);
+          const code = text?.split('Код подтверждения: ')[1].split('\n')[0]
+          if (code) {
+            this.handleCode(code);
+          }
         });
       });
     });
@@ -75,8 +82,8 @@ export class MailClient {
     });
   }
 
-  onCode(handleCode) {
-    this.#handleCode = handleCode
+  onCode(handleCode: (code: string) => void) {
+    this.handleCode = handleCode
   }
 
   destroy() {

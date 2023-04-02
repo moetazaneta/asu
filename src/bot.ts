@@ -1,21 +1,23 @@
 import { Telegraf } from 'telegraf'
-import { userRepo } from './userRepo.js'
+import { userService } from './userService'
 
 class Bot {
-  constructor() {
-    this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+  private readonly bot: Telegraf;
+
+  public constructor() {
+    this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 
     this.bot.start((ctx) => ctx.reply('Welcome!'));
     this.bot.help((ctx) => ctx.reply(
       'To add your account, type `/add {you@gmail.com} {app-password}`',
-      { parse_mode: "markdown" }
+      { parse_mode: "Markdown" }
     ));
 
     this.bot.command('add', (ctx) => {
       const [email, password] = ctx.message.text.slice(5).split(' ')
       const chatId = ctx.message.chat.id;
 
-      userRepo.add(chatId, {
+      userService.add(chatId, {
         email,
         password,
       })
@@ -23,10 +25,10 @@ class Bot {
       ctx.reply(`Added ${email}`);
     })
 
-    this.bot.command('delete', ctx => {
+    this.bot.command('delete', async ctx => {
       const chatId = ctx.message.chat.id;
-      ctx.reply(`Removed ${userRepo.getEmail(chatId)}`);
-      userRepo.delete(chatId);
+      ctx.reply(`Removed ${await userService.getEmail(chatId)}`);
+      await userService.delete(chatId);
     })
 
     // Enable graceful stop
@@ -34,13 +36,13 @@ class Bot {
     process.once('SIGTERM', () => this.bot.stop('SIGTERM'));
   }
 
-  start() {
+  public start() {
     this.bot.launch()
   }
 
-  sendCode(chatId, code) {
+  public sendCode(chatId: number, code: string) {
     this.bot.telegram.sendMessage(chatId, `\`${code}\``, {
-      parse_mode: "markdown",
+      parse_mode: "Markdown",
     })
   }
 }
